@@ -1,9 +1,85 @@
-function mygreprecursive($patt) {
-  $excludeList = @("*.jar", "*.bin", "*.class", "*.xaml", "*.dll", "*.exe", "*.pdb")
-  Get-ChildItem -Path . -R -Exclude $excludeList | Select-String -Pattern $patt
+function getExcludeList{
+	$myexcludelist = @("*.jar", "*.bin", "*.class", "*.xaml", "*.dll", "*.exe", "*.pdb", "*.cache", "*.less", "*.exec", "*.msi", "*.resx", "*.resources")
+	return $myexcludelist
 }
- 
-New-Alias gr mygreprecursive
+
+function myTouch($filename){
+	New-Item $filename
+}
+
+function mygreprecursive($patt) {
+$excludeList = getExcludeList
+Get-ChildItem -Path . -R -Exclude $excludeList | Select-String -Pattern $patt
+}
+
+function myLsPatternRecursive($patt){
+Get-ChildItem -Path . -Recurse  -Filter $patt | Select-Object FullName | Format-Table -Wrap -Autosize
+
+}
+
+function grcurrdir($patt) {
+$excludeList = getExcludeList
+Get-ChildItem -Path . -Exclude $excludeList | Select-String -Pattern $patt
+}
+
+function grSameLine
+(
+    [object[]]$array
+)
+{
+    # use this to get the parameter set name
+	$excludeList = getExcludeList
+	$command = ""
+    if ($array) {
+		Write-Host "is array"
+			for ($i=0; $i -lt $array.length; $i++) {
+				$tmp = $array[$i]
+				if($i -eq 0){
+					$command += "Get-ChildItem -Path . -R -Exclude `$excludeList | Select-String -Pattern $tmp"
+				}
+				else{
+					$command += " | Select-String -Pattern $tmp"
+				}
+		}
+		Write-Host "Executing command -:" $command
+		Invoke-Expression $command
+	}
+	else {
+		Write-Host "error"
+	}
+	
+}
+
+function grarray
+(
+    [object[]]$array
+)
+{
+    # use this to get the parameter set name
+	$excludeList = getExcludeList
+	$excludeList = $excludeList -join ","
+	$command = ""
+    if ($array) {
+		Write-Host "is array"
+			for ($i=0; $i -lt $array.length; $i++) {
+				$tmp = $array[$i]
+				if($i -eq 0){
+					$command += "Get-ChildItem -Path . -R -Exclude $excludeList | Select-String -Pattern $tmp"
+				}
+				else{
+					$command += " | Get-ChildItem | sort -unique | Select-String -Pattern $tmp"
+				}
+		}
+		Write-Host "Executing command -:" $command
+		Invoke-Expression $command
+	}
+	else {
+		Write-Host "error"
+	}
+	
+}
+
+#deprecated - reference only
 function mycurl {
   param(
     [Parameter(Mandatory = $true, ValueFromRemainingArguments = $true)]
@@ -59,11 +135,6 @@ function mycurl2 {
   Write-Host "sending: " "/C curl.exe $myargs & pause"
   start-process cmd "/C curl.exe $myargs & pause"
 }
-
-# usage in powershell curl1 '-option1 value1 -option2 ...'
-# be sure to enclose argument list in single quotes
-New-Alias curl1 mycurl2
-New-Alias curl2 mycurl2
 
 function testFunc {
 
@@ -123,3 +194,14 @@ function correctInnerQuotes($mystring) {
 }
 
 New-Alias test1 testFunc
+# usage in powershell curl1 '-option1 value1 -option2 ...'
+# be sure to enclose argument list in single quotes
+New-Alias curl1 mycurl2
+New-Alias curl2 mycurl2
+New-Alias touch myTouch
+New-Alias grsl grSameLine
+New-Alias gr2 grarray
+New-Alias grhere grcurrdir
+New-Alias gr mygreprecursive
+Set-PSReadlineKeyHandler -Key Tab -Function Complete
+New-Alias lsrec myLsPatternRecursive
